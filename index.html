@@ -1,253 +1,1350 @@
 <!DOCTYPE html>
 <html lang="uz">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StudyTrack — O'rganish Kuzatuv</title>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Syne:wght@400;500;600;700;800&display=swap"
-        rel="stylesheet">
-    <link rel="stylesheet" href="./style.css">
-</head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StudyTrack — O'rganishni Kuzat, Takrorla, Ustivor bo'l</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --surface: #13131a;
+      --surface2: #1c1c28;
+      --border: #2a2a3d;
+      --accent: #6c63ff;
+      --accent2: #ff6584;
+      --accent3: #43e97b;
+      --text: #e8e8f0;
+      --text2: #8888aa;
+      --text3: #4a4a6a;
+      --danger: #ff4757;
+      --warn: #ffa502;
+      --success: #2ed573;
+      --radius: 16px;
+      --radius-sm: 10px;
+    }
 
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Space Grotesk', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Noise texture */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+      opacity: .4;
+    }
+
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* ===== NAVBAR ===== */
+    .navbar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      background: rgba(10,10,15,.9);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 32px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .nav-logo {
+      font-family: 'Syne', sans-serif;
+      font-size: 22px;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-decoration: none;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .nav-link {
+      padding: 8px 14px;
+      color: var(--text2);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      border-radius: 8px;
+      transition: all .2s;
+    }
+
+    .nav-link:hover { color: var(--text); background: var(--surface2); }
+
+    .nav-cta {
+      padding: 9px 20px;
+      background: linear-gradient(135deg, var(--accent), #8b5cf6);
+      color: #fff;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: var(--radius-sm);
+      transition: all .2s;
+      margin-left: 8px;
+    }
+
+    .nav-cta:hover {
+      box-shadow: 0 6px 24px rgba(108,99,255,.4);
+      transform: translateY(-1px);
+    }
+
+    /* ===== HERO ===== */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 120px 24px 80px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Glowing orbs */
+    .hero::after {
+      content: '';
+      position: absolute;
+      top: 20%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 700px;
+      height: 700px;
+      background: radial-gradient(ellipse, rgba(108,99,255,.12) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .orb-1 {
+      width: 400px; height: 400px;
+      background: rgba(108,99,255,.15);
+      top: 10%; left: -10%;
+      animation: float1 8s ease-in-out infinite;
+    }
+
+    .orb-2 {
+      width: 300px; height: 300px;
+      background: rgba(255,101,132,.12);
+      top: 30%; right: -5%;
+      animation: float2 10s ease-in-out infinite;
+    }
+
+    .orb-3 {
+      width: 250px; height: 250px;
+      background: rgba(67,233,123,.08);
+      bottom: 10%; left: 30%;
+      animation: float1 12s ease-in-out infinite reverse;
+    }
+
+    @keyframes float1 {
+      0%, 100% { transform: translateY(0px) translateX(0px); }
+      33% { transform: translateY(-30px) translateX(15px); }
+      66% { transform: translateY(15px) translateX(-10px); }
+    }
+
+    @keyframes float2 {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-40px); }
+    }
+
+    .hero-inner {
+      position: relative;
+      z-index: 1;
+      max-width: 820px;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(108,99,255,.12);
+      border: 1px solid rgba(108,99,255,.3);
+      border-radius: 999px;
+      padding: 6px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--accent);
+      margin-bottom: 28px;
+      animation: fadeUp .6s ease both;
+    }
+
+    .hero-badge-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: pulse 2s ease infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: .5; transform: scale(1.4); }
+    }
+
+    .hero-title {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(40px, 7vw, 72px);
+      font-weight: 800;
+      line-height: 1.1;
+      margin-bottom: 24px;
+      animation: fadeUp .6s .1s ease both;
+    }
+
+    .hero-title .grad {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-title .grad2 {
+      background: linear-gradient(135deg, var(--accent3), #00d2ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-sub {
+      font-size: clamp(16px, 2.5vw, 20px);
+      color: var(--text2);
+      line-height: 1.7;
+      max-width: 580px;
+      margin: 0 auto 40px;
+      font-weight: 400;
+      animation: fadeUp .6s .2s ease both;
+    }
+
+    .hero-btns {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+      animation: fadeUp .6s .3s ease both;
+    }
+
+    .btn-hero-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 16px 32px;
+      background: linear-gradient(135deg, var(--accent), #8b5cf6);
+      color: #fff;
+      text-decoration: none;
+      font-size: 15px;
+      font-weight: 600;
+      border-radius: var(--radius-sm);
+      transition: all .25s;
+      border: none;
+      cursor: pointer;
+      font-family: 'Space Grotesk', sans-serif;
+    }
+
+    .btn-hero-primary:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 40px rgba(108,99,255,.45);
+    }
+
+    .btn-hero-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 16px 32px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      text-decoration: none;
+      font-size: 15px;
+      font-weight: 600;
+      border-radius: var(--radius-sm);
+      transition: all .25s;
+    }
+
+    .btn-hero-secondary:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* Hero stats */
+    .hero-stats {
+      display: flex;
+      gap: 40px;
+      justify-content: center;
+      margin-top: 60px;
+      flex-wrap: wrap;
+      animation: fadeUp .6s .4s ease both;
+    }
+
+    .hero-stat {
+      text-align: center;
+    }
+
+    .hero-stat-num {
+      font-family: 'Syne', sans-serif;
+      font-size: 32px;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      line-height: 1;
+    }
+
+    .hero-stat-label {
+      font-size: 13px;
+      color: var(--text2);
+      margin-top: 6px;
+      font-weight: 500;
+    }
+
+    .hero-stat-divider {
+      width: 1px;
+      background: var(--border);
+      align-self: stretch;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ===== HOW IT WORKS ===== */
+    section {
+      padding: 100px 24px;
+      position: relative;
+    }
+
+    .section-header {
+      text-align: center;
+      max-width: 600px;
+      margin: 0 auto 64px;
+    }
+
+    .section-tag {
+      display: inline-block;
+      background: rgba(108,99,255,.12);
+      border: 1px solid rgba(108,99,255,.25);
+      border-radius: 999px;
+      padding: 5px 14px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(28px, 4vw, 42px);
+      font-weight: 800;
+      line-height: 1.2;
+      margin-bottom: 16px;
+    }
+
+    .section-title .grad {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .section-sub {
+      font-size: 16px;
+      color: var(--text2);
+      line-height: 1.7;
+    }
+
+    /* Steps */
+    .steps-grid {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 24px;
+      position: relative;
+    }
+
+    .step-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px 28px;
+      position: relative;
+      overflow: hidden;
+      transition: transform .3s, border-color .3s, box-shadow .3s;
+    }
+
+    .step-card::before {
+      content: '';
+      position: absolute;
+      top: -1px; left: 20%; right: 20%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      border-radius: 999px;
+      opacity: 0;
+      transition: opacity .3s;
+    }
+
+    .step-card:hover {
+      transform: translateY(-6px);
+      border-color: rgba(108,99,255,.4);
+      box-shadow: 0 20px 60px rgba(108,99,255,.15);
+    }
+
+    .step-card:hover::before { opacity: 1; }
+
+    .step-num-big {
+      font-family: 'Syne', sans-serif;
+      font-size: 64px;
+      font-weight: 800;
+      color: var(--border);
+      line-height: 1;
+      margin-bottom: 16px;
+      transition: color .3s;
+    }
+
+    .step-card:hover .step-num-big {
+      color: rgba(108,99,255,.3);
+    }
+
+    .step-icon {
+      font-size: 36px;
+      margin-bottom: 16px;
+      display: block;
+    }
+
+    .step-card h3 {
+      font-family: 'Syne', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      color: var(--text);
+    }
+
+    .step-card p {
+      font-size: 14px;
+      color: var(--text2);
+      line-height: 1.7;
+    }
+
+    /* ===== FEATURES ===== */
+    .features-bg {
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .features-grid {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2px;
+    }
+
+    .feature-item {
+      padding: 36px 32px;
+      border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      transition: background .2s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .feature-item:hover {
+      background: var(--surface2);
+    }
+
+    .feature-item::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 50% 0%, rgba(108,99,255,.08), transparent 70%);
+      opacity: 0;
+      transition: opacity .3s;
+    }
+
+    .feature-item:hover::after { opacity: 1; }
+
+    .feature-icon-wrap {
+      width: 52px; height: 52px;
+      background: rgba(108,99,255,.12);
+      border: 1px solid rgba(108,99,255,.2);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      margin-bottom: 20px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .feature-item:nth-child(2) .feature-icon-wrap {
+      background: rgba(255,101,132,.12);
+      border-color: rgba(255,101,132,.2);
+    }
+
+    .feature-item:nth-child(3) .feature-icon-wrap {
+      background: rgba(67,233,123,.1);
+      border-color: rgba(67,233,123,.2);
+    }
+
+    .feature-item:nth-child(4) .feature-icon-wrap {
+      background: rgba(255,165,2,.1);
+      border-color: rgba(255,165,2,.2);
+    }
+
+    .feature-item:nth-child(5) .feature-icon-wrap {
+      background: rgba(0,210,255,.1);
+      border-color: rgba(0,210,255,.2);
+    }
+
+    .feature-item:nth-child(6) .feature-icon-wrap {
+      background: rgba(139,92,246,.12);
+      border-color: rgba(139,92,246,.2);
+    }
+
+    .feature-item h3 {
+      font-family: 'Syne', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--text);
+      position: relative;
+      z-index: 1;
+    }
+
+    .feature-item p {
+      font-size: 14px;
+      color: var(--text2);
+      line-height: 1.7;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ===== SPACED REPETITION ===== */
+    .repetition-section {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 60px;
+      align-items: center;
+    }
+
+    .rep-content {}
+
+    .rep-content p {
+      font-size: 16px;
+      color: var(--text2);
+      line-height: 1.8;
+      margin-bottom: 24px;
+    }
+
+    .rep-timeline {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .rep-item {
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+      position: relative;
+    }
+
+    .rep-item:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      left: 19px;
+      top: 40px;
+      width: 2px;
+      height: calc(100% - 8px);
+      background: var(--border);
+    }
+
+    .rep-dot {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+      font-family: 'Syne', sans-serif;
+      flex-shrink: 0;
+      z-index: 1;
+      position: relative;
+    }
+
+    .rep-dot.d1 { background: rgba(108,99,255,.2); color: var(--accent); border: 1px solid rgba(108,99,255,.4); }
+    .rep-dot.d2 { background: rgba(255,165,2,.15); color: var(--warn); border: 1px solid rgba(255,165,2,.3); }
+    .rep-dot.d3 { background: rgba(67,233,123,.12); color: var(--success); border: 1px solid rgba(67,233,123,.3); }
+    .rep-dot.d4 { background: linear-gradient(135deg, rgba(108,99,255,.2), rgba(255,101,132,.2)); color: var(--text); border: 1px solid rgba(108,99,255,.4); }
+
+    .rep-text {
+      padding: 10px 0 28px;
+    }
+
+    .rep-text strong {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .rep-text span {
+      font-size: 13px;
+      color: var(--text2);
+      line-height: 1.5;
+    }
+
+    /* Mock phone */
+    .rep-visual {
+      position: relative;
+    }
+
+    .phone-mock {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 20px;
+      box-shadow: 0 40px 120px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.04);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .phone-mock::before {
+      content: '';
+      position: absolute;
+      top: -1px; left: 20%; right: 20%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      border-radius: 999px;
+    }
+
+    .phone-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tg-avatar {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #2AABEE, #229ED9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .tg-name { font-size: 14px; font-weight: 600; }
+    .tg-sub { font-size: 11px; color: var(--text2); }
+
+    .tg-msg {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 14px 14px 14px 4px;
+      padding: 14px;
+      margin-bottom: 10px;
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--text2);
+    }
+
+    .tg-msg strong { color: var(--text); }
+
+    .tg-msg .subjects {
+      margin: 10px 0 0;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .tg-subject {
+      background: rgba(108,99,255,.1);
+      border: 1px solid rgba(108,99,255,.2);
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 12px;
+      color: var(--accent);
+      font-weight: 500;
+    }
+
+    .tg-btn {
+      background: linear-gradient(135deg, var(--accent), #8b5cf6);
+      border-radius: 10px;
+      padding: 11px 14px;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 600;
+      color: #fff;
+      cursor: pointer;
+      transition: all .2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    .tg-time {
+      font-size: 10px;
+      color: var(--text3);
+      text-align: right;
+      margin-top: 6px;
+    }
+
+    /* Notification badge */
+    .notif-badge {
+      position: absolute;
+      top: -4px; right: -4px;
+      width: 18px; height: 18px;
+      background: var(--accent2);
+      border-radius: 50%;
+      font-size: 10px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      animation: pulse 2s ease infinite;
+    }
+
+    /* ===== TELEGRAM BOT ===== */
+    .telegram-section {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .tg-steps {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin-top: 0;
+    }
+
+    .tg-step-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px 24px;
+      text-align: center;
+      transition: all .3s;
+      position: relative;
+    }
+
+    .tg-step-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(108,99,255,.3);
+      box-shadow: 0 16px 50px rgba(108,99,255,.12);
+    }
+
+    .tg-step-num {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: rgba(108,99,255,.15);
+      color: var(--accent);
+      font-weight: 700;
+      font-family: 'Syne', sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+      border: 1px solid rgba(108,99,255,.3);
+    }
+
+    .tg-step-icon { font-size: 32px; margin-bottom: 14px; display: block; }
+
+    .tg-step-card h3 {
+      font-family: 'Syne', sans-serif;
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .tg-step-card p {
+      font-size: 13px;
+      color: var(--text2);
+      line-height: 1.6;
+    }
+
+    .tg-step-card code {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1px 6px;
+      color: var(--accent);
+      font-size: 12px;
+    }
+
+    /* ===== TESTIMONIALS / MOCKUP STATS ===== */
+    .stats-section {
+      background: radial-gradient(ellipse at 50% 0%, rgba(108,99,255,.08), transparent 60%);
+    }
+
+    .stats-row {
+      max-width: 900px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 2px;
+    }
+
+    .stat-big {
+      text-align: center;
+      padding: 40px 20px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      transition: all .2s;
+    }
+
+    .stat-big:first-child { border-radius: var(--radius) 0 0 var(--radius); }
+    .stat-big:last-child { border-radius: 0 var(--radius) var(--radius) 0; }
+
+    .stat-big:hover { background: var(--surface2); }
+
+    .stat-big-num {
+      font-family: 'Syne', sans-serif;
+      font-size: 42px;
+      font-weight: 800;
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+
+    .stat-big-num.c1 { background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .stat-big-num.c2 { color: var(--success); }
+    .stat-big-num.c3 { color: var(--warn); }
+    .stat-big-num.c4 { background: linear-gradient(135deg, var(--accent3), #00d2ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+    .stat-big-label {
+      font-size: 13px;
+      color: var(--text2);
+      font-weight: 500;
+      line-height: 1.4;
+    }
+
+    /* ===== CTA ===== */
+    .cta-section {
+      text-align: center;
+      padding: 100px 24px;
+    }
+
+    .cta-inner {
+      max-width: 700px;
+      margin: 0 auto;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 64px 48px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cta-inner::before {
+      content: '';
+      position: absolute;
+      top: -1px; left: 15%; right: 15%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent), var(--accent2), transparent);
+      border-radius: 999px;
+    }
+
+    .cta-inner::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: radial-gradient(ellipse at 50% 0%, rgba(108,99,255,.1), transparent 60%);
+      pointer-events: none;
+    }
+
+    .cta-emoji { font-size: 52px; display: block; margin-bottom: 20px; position: relative; z-index: 1; }
+
+    .cta-title {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(28px, 4vw, 42px);
+      font-weight: 800;
+      line-height: 1.2;
+      margin-bottom: 16px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .cta-sub {
+      font-size: 16px;
+      color: var(--text2);
+      line-height: 1.7;
+      max-width: 480px;
+      margin: 0 auto 36px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .cta-btns {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+      position: relative;
+      z-index: 1;
+    }
+
+    .btn-tg {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 15px 28px;
+      background: linear-gradient(135deg, #2AABEE, #229ED9);
+      color: #fff;
+      text-decoration: none;
+      font-size: 15px;
+      font-weight: 600;
+      border-radius: var(--radius-sm);
+      transition: all .25s;
+    }
+
+    .btn-tg:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 36px rgba(42,171,238,.35);
+    }
+
+    /* ===== FOOTER ===== */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 40px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .footer-logo {
+      font-family: 'Syne', sans-serif;
+      font-size: 18px;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .footer-text {
+      font-size: 13px;
+      color: var(--text3);
+    }
+
+    .footer-link {
+      font-size: 13px;
+      color: var(--text2);
+      text-decoration: none;
+      transition: color .2s;
+    }
+
+    .footer-link:hover { color: var(--accent); }
+
+    /* ===== SCROLL REVEAL ===== */
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity .6s ease, transform .6s ease;
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 900px) {
+      .repetition-section { grid-template-columns: 1fr; gap: 40px; }
+      .rep-visual { order: -1; }
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
+      .stat-big:first-child { border-radius: var(--radius) 0 0 0; }
+      .stat-big:last-child { border-radius: 0 0 var(--radius) 0; }
+      .tg-steps { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 640px) {
+      .navbar { padding: 0 16px; }
+      .nav-links { display: none; }
+      .nav-cta { padding: 8px 16px; font-size: 13px; }
+      section { padding: 70px 16px; }
+      .hero { padding: 100px 16px 60px; }
+      .hero-stats { gap: 24px; }
+      .hero-stat-divider { display: none; }
+      .cta-inner { padding: 40px 24px; }
+      .features-grid { grid-template-columns: 1fr; }
+      .feature-item { border-right: none; }
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
+      footer { flex-direction: column; text-align: center; }
+    }
+  </style>
+</head>
 <body>
 
-    <!-- ===================== AUTH ===================== -->
-    <div id="auth-screen">
-        <div class="auth-card">
-            <div class="auth-logo">StudyTrack</div>
-            <div class="auth-sub">O'rganishingizni kuzating va takrorlang</div>
-            <div class="tab-row">
-                <button class="tab-btn active" onclick="switchTab('login')">Kirish</button>
-                <button class="tab-btn" onclick="switchTab('register')">Ro'yxatdan o'tish</button>
-            </div>
-            
-            <div class="auth-err" id="auth-err"></div>
-            <div id="login-form">
-                <div class="inp-group">
-                    <label>Email</label>
-                    <input type="email" id="login-email" placeholder="email@mail.com">
-                </div>
-                <div class="inp-group">
-                    <label>Parol</label>
-                    <input type="password" id="login-pass" placeholder="••••••••">
-                </div>
-                <button class="btn-primary" onclick="doLogin()">Kirish</button>
-            </div>
-            <div id="reg-form" style="display:none">
-                <div class="inp-group">
-                    <label>Ism</label>
-                    <input type="text" id="reg-name" placeholder="Ismingiz">
-                </div>
-                <div class="inp-group">
-                    <label>Email</label>
-                    <input type="email" id="reg-email" placeholder="email@mail.com">
-                </div>
-                <div class="inp-group">
-                    <label>Parol</label>
-                    <input type="password" id="reg-pass" placeholder="min 6 belgi">
-                </div>
-                <button class="btn-primary" onclick="doRegister()">Ro'yxatdan o'tish</button>
-            </div>
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <a class="nav-logo" href="#">StudyTrack</a>
+    <div class="nav-links">
+      <a class="nav-link" href="#how">Qanday ishlaydi</a>
+      <a class="nav-link" href="#features">Imkoniyatlar</a>
+      <a class="nav-link" href="#telegram">Telegram Bot</a>
+    </div>
+    <a class="nav-cta" href="./dashboard.html" target="_blank">Boshlash →</a>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+
+    <div class="hero-inner">
+      <div class="hero-badge">
+        <span class="hero-badge-dot"></span>
+        Bepul • Telegram bilan ulangan • Har kuni ishlaydi
+      </div>
+
+      <h1 class="hero-title">
+        O'rganganingni <span class="grad">unutma</span>,<br>
+        takrorla va <span class="grad2">ustivor bo'l</span>
+      </h1>
+
+      <p class="hero-sub">
+        StudyTrack — har kuni o'rganilgan mavzularni kuzatib boradi va 
+        Telegram orqali eslatma yuboradi. Ilmiy isbotlangan <strong style="color:var(--text)">Spaced Repetition</strong> usuli bilan bilimlar xotirada mustahkam o'rnashadi.
+      </p>
+
+      <div class="hero-btns">
+        <a class="btn-hero-primary" href="./dashboard.html" target="_blank">
+          🚀 Hoziroq boshlash
+        </a>
+        <a class="btn-hero-secondary" href="#how">
+          📖 Qanday ishlaydi?
+        </a>
+      </div>
+
+      <div class="hero-stats">
+        <div class="hero-stat">
+          <div class="hero-stat-num">3x</div>
+          <div class="hero-stat-label">Yaxshi esda qolish</div>
         </div>
+        <div class="hero-stat-divider"></div>
+        <div class="hero-stat">
+          <div class="hero-stat-num">7:00</div>
+          <div class="hero-stat-label">Kunlik eslatma</div>
+        </div>
+        <div class="hero-stat-divider"></div>
+        <div class="hero-stat">
+          <div class="hero-stat-num">100%</div>
+          <div class="hero-stat-label">Bepul foydalanish</div>
+        </div>
+        <div class="hero-stat-divider"></div>
+        <div class="hero-stat">
+          <div class="hero-stat-num">3</div>
+          <div class="hero-stat-label">Takrorlash bosqichi</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section id="how">
+    <div class="section-header reveal">
+      <div class="section-tag">Qanday ishlaydi</div>
+      <h2 class="section-title">3 ta oddiy qadam — <span class="grad">natija kafolatlangan</span></h2>
+      <p class="section-sub">Kuniga 5 daqiqa ajrating — StudyTrack qolganini o'zi qiladi</p>
     </div>
 
-    <!-- ===================== APP ===================== -->
-    <div id="app">
+    <div class="steps-grid">
+      <div class="step-card reveal">
+        <div class="step-num-big">01</div>
+        <span class="step-icon">📅</span>
+        <h3>Bugun nima o'rganding?</h3>
+        <p>Kalendarga kiring va bugun o'rgangan fan yoki mavzularingizni yozing. Bir necha daqiqa — xolos.</p>
+      </div>
 
-        <!-- NAVBAR -->
-        <nav class="navbar">
-            <div class="nav-logo">StudyTrack</div>
+      <div class="step-card reveal" style="transition-delay: .1s">
+        <div class="step-num-big">02</div>
+        <span class="step-icon">🔔</span>
+        <h3>Telegram eslatma keladi</h3>
+        <p>3 kun o'tgach bot @StudyTrackuzbot sizga eslatma yuboradi. Tasdiqlasangiz — keyingi sana belgilanadi.</p>
+      </div>
 
-            <!-- Desktop tabs (o'rtada) -->
-            <div class="nav-tabs">
-                <button class="nav-tab active" onclick="showPage('calendar')">📅 Kalendar</button>
-                <button class="nav-tab" onclick="showPage('stats')">📊 Statistika</button>
-                <button class="nav-tab" onclick="showPage('telegram')">🤖 Telegram Bot</button>
-            </div>
+      <div class="step-card reveal" style="transition-delay: .2s">
+        <div class="step-num-big">03</div>
+        <span class="step-icon">🏆</span>
+        <h3>Mukammal o'zlashtirildi!</h3>
+        <p>3 marta muvaffaqiyatli takrorlagan mavzular "Mastered" belgisini oladi. Statistikada ko'rinadi.</p>
+      </div>
+    </div>
+  </section>
 
-            <!-- Desktop: avatar + dropdown -->
-            <div class="nav-right">
-                <div class="nav-avatar-wrap">
-                    <div class="nav-avatar-btn" id="nav-avatar-btn" onclick="toggleDropdown()">?</div>
-                    <div class="nav-dropdown" id="nav-dropdown">
-                        <div class="dd-user-row">
-                            <div class="dd-avatar" id="dd-avatar">?</div>
-                            <div>
-                                <div class="dd-user-name" id="dd-name">—</div>
-                                <div class="dd-user-email" id="dd-email">—</div>
-                            </div>
-                        </div>
-                        <div class="dd-theme-row" onclick="toggleTheme()">
-                            <div class="dd-theme-label">
-                                <span class="theme-icon" id="theme-icon">🌙</span>
-                                <span id="theme-label">Dark Mode</span>
-                            </div>
-                            <div class="toggle-switch" id="theme-toggle"></div>
-                        </div>
-                        <div class="dd-divider"></div>
-                        <button class="dd-logout-btn" onclick="doLogout()">
-                            <span class="logout-icon">🚪</span>
-                            <span class="logout-text">Chiqish</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </nav>
-
-        <!-- MOBILE BOTTOM NAV -->
-        <div class="bottom-nav" id="bottom-nav">
-            <div class="bottom-nav-inner">
-                <button class="bottom-tab active" id="btab-calendar" onclick="showPage('calendar')">
-                    <span class="tab-icon">📅</span>
-                    <span class="tab-label">Kalendar</span>
-                </button>
-                <button class="bottom-tab" id="btab-stats" onclick="showPage('stats')">
-                    <span class="tab-icon">📊</span>
-                    <span class="tab-label">Statistika</span>
-                </button>
-                <button class="bottom-tab" id="btab-telegram" onclick="showPage('telegram')">
-                    <span class="tab-icon">🤖</span>
-                    <span class="tab-label">Bot</span>
-                </button>
-                <button class="bottom-tab" id="btab-profile" onclick="openProfile()">
-                    <span class="tab-icon">👤</span>
-                    <span class="tab-label">Profil</span>
-                </button>
-            </div>
-        </div>
-
-        <!-- ===== CALENDAR PAGE ===== -->
-        <div class="page active" id="page-calendar">
-            <div class="cal-header">
-                <div>
-                    <div class="cal-title">O'rganish <span>Kalendari</span></div>
-                    <div class="cal-title-sub">Faqat bugun va kecha uchun yozish mumkin</div>
-                </div>
-                <div class="cal-nav">
-                    <button class="cal-nav-btn" onclick="changeMonth(-1)">‹</button>
-                    <span class="cal-month-label" id="cal-month-label"></span>
-                    <button class="cal-nav-btn" onclick="changeMonth(1)">›</button>
-                </div>
-            </div>
-            <div class="cal-grid" id="cal-grid"></div>
-        </div>
-
-        <!-- ===== STATS PAGE ===== -->
-        <div class="page" id="page-stats">
-            <div class="cal-title" style="margin-bottom:24px">
-                📊 <span
-                    style="background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent">Statistika</span>
-            </div>
-            <div class="stats-grid" id="stats-grid"></div>
-            <div class="section-title">Barcha fanlar holati</div>
-            <div class="table-wrap">
-                <table class="subject-table">
-                    <thead>
-                        <tr>
-                            <th>Fan / Yo'nalish</th>
-                            <th>So'nggi yozuv</th>
-                            <th>Holat</th>
-                            <th>Takrorlash</th>
-                        </tr>
-                    </thead>
-                    <tbody id="stats-table"></tbody>
-                </table>
-            </div>
-            <div style="margin-top:32px">
-                <div class="section-title">Chala va o'rganilmagan mavzular</div>
-                <div id="incomplete-list"
-                    style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;"></div>
-            </div>
-        </div>
-
-        <!-- ===== TELEGRAM PAGE ===== -->
-        <div class="page" id="page-telegram">
-            <div class="cal-title" style="margin-bottom:24px">
-                🤖 Telegram <span
-                    style="background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent">Bot</span>
-            </div>
-            <div class="bot-setup">
-                <h2>Telegram botni ulash</h2>
-                <p>Bot sizga har kuni ertalab soat 7:00 da eslatma yuboradi. Tasdiqlaguningizcha har 3 soatda qaytaradi
-                    (21:00 gacha).</p>
-                <div class="step-list">
-                    <div class="step-item">
-                        <div class="step-num">1</div>
-                        <div class="step-text">Telegram'da <code>@panjiyevdevbot</code> ni qidiring va /start bosing
-                        </div>
-                    </div>
-                    <div class="step-item">
-                        <div class="step-num">2</div>
-                        <div class="step-text">Bot sizga <strong>Chat ID</strong> beradi — uni quyida kiriting</div>
-                    </div>
-                    <div class="step-item">
-                        <div class="step-num">3</div>
-                        <div class="step-text">Saqlang — eslatmalar avtomatik boshlanadi!</div>
-                    </div>
-                </div>
-                <div class="inp-group">
-                    <label>Telegram Chat ID</label>
-                    <input type="text" id="tg-chat-id" class="mini-inp" placeholder="Masalan: 123456789">
-                </div>
-                <button class="btn-save" onclick="saveTgId()" style="width:100%;padding:14px">Saqlash</button>
-                <div id="tg-status" style="margin-top:16px;font-size:13px;color:var(--text2);"></div>
-            </div>
-            <div
-                style="margin-top:32px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:28px;">
-                <div class="section-title">Kelayotgan eslatmalar</div>
-                <div id="reminders-list"></div>
-            </div>
-        </div>
-
-    </div><!-- /app -->
-
-    <!-- ===== ENTRY MODAL ===== -->
-    <div class="modal-overlay" id="modal-overlay" onclick="closeModalOnBg(event)">
-        <div class="modal" id="modal">
-            <div class="modal-header">
-                <div>
-                    <div class="modal-date" id="modal-date-title">— — —</div>
-                    <div class="modal-date-sub" id="modal-date-sub"></div>
-                </div>
-                <button class="modal-close" onclick="closeModal()">✕</button>
-            </div>
-            <div id="modal-body-content"></div>
-        </div>
+  <!-- FEATURES -->
+  <section class="features-bg" id="features">
+    <div class="section-header reveal">
+      <div class="section-tag">Imkoniyatlar</div>
+      <h2 class="section-title">Hamma narsa <span class="grad">bir joyda</span></h2>
+      <p class="section-sub">O'qish, kuzatish, takrorlash — hammasini StudyTrack hal qiladi</p>
     </div>
 
-    <!-- ===== MOBILE PROFILE DRAWER ===== -->
-    <div class="drawer-overlay" id="drawer-overlay" onclick="closeProfile()"></div>
-    <div class="profile-drawer" id="profile-drawer">
-        <div class="drawer-handle"></div>
-        <div class="drawer-avatar-row">
-            <div class="drawer-avatar" id="drawer-avatar">?</div>
+    <div class="features-grid">
+      <div class="feature-item reveal">
+        <div class="feature-icon-wrap">📅</div>
+        <h3>O'qish Kalendari</h3>
+        <p>Har kungi o'rganilgan mavzularni vizual kalendarda ko'rish. Bugun va kechagi kunni tahrirlash imkoniyati.</p>
+      </div>
+
+      <div class="feature-item reveal" style="transition-delay: .1s">
+        <div class="feature-icon-wrap">🤖</div>
+        <h3>Telegram Bot Eslatmalar</h3>
+        <p>@StudyTrackuzbot har kuni soat 7:00 dan 21:00 gacha 3 soatda bir marta eslatma yuboradi. Javob bermaganda qaytaradi.</p>
+      </div>
+
+      <div class="feature-item reveal" style="transition-delay: .2s">
+        <div class="feature-icon-wrap">🧠</div>
+        <h3>Spaced Repetition</h3>
+        <p>Ilmiy usul: 3-kun, 7-kun, 15-kun — har bir tasdiqlashda keyingi sana avtomatik belgilanadi.</p>
+      </div>
+
+      <div class="feature-item reveal" style="transition-delay: .3s">
+        <div class="feature-icon-wrap">📊</div>
+        <h3>Batafsil Statistika</h3>
+        <p>Qaysi fanlar o'zlashtirilgan, qaysilari hali takrorlashni kutmoqda — hammasini bir ko'rishda bilib olasiz.</p>
+      </div>
+
+      <div class="feature-item reveal" style="transition-delay: .4s">
+        <div class="feature-icon-wrap">🌙</div>
+        <h3>Dark / Light Tema</h3>
+        <p>Ko'zingizga qulay bo'lgan rejimni tanlang. Tanlov qurilmada saqlanib qoladi.</p>
+      </div>
+
+      <div class="feature-item reveal" style="transition-delay: .5s">
+        <div class="feature-icon-wrap">🔐</div>
+        <h3>Xavfsiz Autentifikatsiya</h3>
+        <p>Firebase orqali ishonchli tizim. Email + parol yoki Google orqali tez kirish imkoniyati.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SPACED REPETITION EXPLANATION -->
+  <section>
+    <div class="repetition-section">
+      <div class="rep-content reveal">
+        <div class="section-tag">Ilmiy asos</div>
+        <h2 class="section-title" style="margin-bottom: 16px">
+          Nima uchun <span class="grad">Spaced Repetition?</span>
+        </h2>
+        <p>Tadqiqotlar ko'rsatadiki, ma'lumotni ma'lum vaqt o'tgach takrorlash oddiy o'qishga qaraganda <strong style="color:var(--text)">3 baravar samarali</strong>. Miya yangi ma'lumotni muhim deb baholaydi.</p>
+        <p>StudyTrack bu usulni avtomatlashtiradi — siz faqat o'qing, qolganini bot hal qiladi.</p>
+
+        <div class="rep-timeline">
+          <div class="rep-item">
+            <div class="rep-dot d1">+3</div>
+            <div class="rep-text">
+              <strong>🔔 Birinchi takrorlash — 3-kun</strong>
+              <span>Yangi ma'lumot qisqa muddatli xotirada. Eslatma yuboriladi.</span>
+            </div>
+          </div>
+          <div class="rep-item">
+            <div class="rep-dot d2">+7</div>
+            <div class="rep-text">
+              <strong>🔁 Ikkinchi takrorlash — 7-kun</strong>
+              <span>Ma'lumot uzoq muddatli xotiraga o'ta boshlaydi.</span>
+            </div>
+          </div>
+          <div class="rep-item">
+            <div class="rep-dot d3">+15</div>
+            <div class="rep-text">
+              <strong>✅ Uchinchi takrorlash — 15-kun</strong>
+              <span>Mavzu mustahkam o'zlashtirildi. Keyingi eslatma yo'q.</span>
+            </div>
+          </div>
+          <div class="rep-item">
+            <div class="rep-dot d4">🏆</div>
+            <div class="rep-text">
+              <strong>Mastered! To'liq o'zlashtirildi</strong>
+              <span>Statistikada "Mukammal" belgisi bilan ko'rinadi.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="rep-visual reveal" style="transition-delay: .2s">
+        <div class="phone-mock">
+          <div class="phone-header">
+            <div class="tg-avatar" style="position:relative">
+              ✈️
+              <div class="notif-badge">1</div>
+            </div>
             <div>
-                <div class="drawer-name" id="drawer-name">—</div>
-                <div class="drawer-email" id="drawer-email">—</div>
+              <div class="tg-name">StudyTrack</div>
+              <div class="tg-sub">🟢 Online</div>
             </div>
-        </div>
-        <div class="drawer-divider"></div>
-        <div class="drawer-theme-row">
-            <div class="drawer-theme-label">
-                <span class="theme-icon" id="m-theme-icon">🌙</span>
-                <span id="m-theme-label">Dark Mode</span>
+          </div>
+
+          <div class="tg-msg">
+            🔔 <strong>TAKRORLASH ESLATMASI</strong> (1-marta)<br><br>
+            📅 Sana: <strong>2025-01-10</strong><br><br>
+            O'rganilgan mavzular:
+            <div class="subjects">
+              <div class="tg-subject">📚 Python — for, while, if/else</div>
+              <div class="tg-subject">📚 Ingliz tili — Past Simple</div>
             </div>
-            <div class="toggle-switch" id="m-theme-toggle" onclick="toggleTheme()"></div>
+          </div>
+
+          <div style="font-size:13px; color:var(--text2); margin-bottom: 8px;">❓ Bularni hali ham eslaysizmi?</div>
+
+          <div class="tg-btn">✅ Ha, eslayapman! (Tasdiqlash)</div>
+          <div class="tg-time">Bugun, 07:00</div>
         </div>
-        <div class="drawer-divider"></div>
-        <button class="drawer-logout-btn" onclick="doLogout()">
-            <span class="logout-icon">🚪</span>
-            <span class="logout-text">Chiqish</span>
-        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- STATS ROW -->
+  <section class="stats-section">
+    <div class="section-header reveal">
+      <div class="section-tag">Natijalar</div>
+      <h2 class="section-title">O'qish — bu <span class="grad">jarayon</span></h2>
+    </div>
+    <div class="stats-row reveal">
+      <div class="stat-big">
+        <div class="stat-big-num c1">3→7→15</div>
+        <div class="stat-big-label">Takrorlash kunlari (ilmiy asosda)</div>
+      </div>
+      <div class="stat-big">
+        <div class="stat-big-num c2">7:00</div>
+        <div class="stat-big-label">Ertalabki birinchi eslatma vaqti</div>
+      </div>
+      <div class="stat-big">
+        <div class="stat-big-num c3">6x</div>
+        <div class="stat-big-label">Kunlik maksimal eslatma soni</div>
+      </div>
+      <div class="stat-big">
+        <div class="stat-big-num c4">∞</div>
+        <div class="stat-big-label">Kuzatib borish mumkin bo'lgan fanlar</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TELEGRAM SETUP -->
+  <section id="telegram">
+    <div class="section-header reveal">
+      <div class="section-tag">Telegram Bot</div>
+      <h2 class="section-title">Botni ulash <span class="grad">juda oson</span></h2>
+      <p class="section-sub">Faqat 3 ta qadam — va eslatmalar avtomatik boshlanadi</p>
     </div>
 
-    <!-- ===== TOAST ===== -->
-    <div class="toast" id="toast"></div>
+    <div class="tg-steps telegram-section">
+      <div class="tg-step-card reveal">
+        <div class="tg-step-num">1</div>
+        <span class="tg-step-icon">🔍</span>
+        <h3>Botni qidiring</h3>
+        <p>Telegram'da <code>@StudyTrackuzbot</code> ni qidiring va <strong>/start</strong> buyrug'ini yuboring</p>
+      </div>
 
-    <script src="app.js" type="module"></script>
+      <div class="tg-step-card reveal" style="transition-delay: .1s">
+        <div class="tg-step-num">2</div>
+        <span class="tg-step-icon">🪪</span>
+        <h3>Chat ID oling</h3>
+        <p>Bot sizga shaxsiy <strong>Chat ID</strong> raqamingizni beradi. Uni nusxa oling.</p>
+      </div>
+
+      <div class="tg-step-card reveal" style="transition-delay: .2s">
+        <div class="tg-step-num">3</div>
+        <span class="tg-step-icon">💾</span>
+        <h3>Saytda saqlang</h3>
+        <p>Saytdagi <strong>Telegram Bot</strong> sahifasiga kiring va Chat ID ni kiriting. Tayyor!</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-section">
+    <div class="cta-inner reveal">
+      <span class="cta-emoji">🚀</span>
+      <h2 class="cta-title">Bugundan boshlang — <span style="background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent">bepul!</span></h2>
+      <p class="cta-sub">
+        Har kuni faqat 5 daqiqa ajrating. StudyTrack qolganini o'zi qiladi — 
+        eslatadi, takrorlaydi va natijani ko'rsatadi.
+      </p>
+      <div class="cta-btns">
+        <a class="btn-hero-primary" href="./dashboard.html" target="_blank">
+          🌐 Saytga kirish
+        </a>
+        <a class="btn-tg" href="https://t.me/StudyTrackuzbot" target="_blank">
+          ✈️ Telegram Bot
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-logo">StudyTrack</div>
+    <div class="footer-text">© 2025 StudyTrack — O'qishni kuzat, bilimni mustahkamla</div>
+    <div style="display:flex; gap:20px;">
+      <a class="footer-link" href="./dashboard.html" target="_blank">Dastur</a>
+      <a class="footer-link" href="https://t.me/StudyTrackuzbot" target="_blank">Bot</a>
+    </div>
+  </footer>
+
+  <script>
+    // Scroll reveal
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+    // Navbar scroll effect
+    window.addEventListener('scroll', () => {
+      const nav = document.querySelector('.navbar');
+      if (window.scrollY > 50) {
+        nav.style.borderBottomColor = 'rgba(42,42,61,0.8)';
+      } else {
+        nav.style.borderBottomColor = '';
+      }
+    });
+  </script>
 
 </body>
-
 </html>
