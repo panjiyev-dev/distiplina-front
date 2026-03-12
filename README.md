@@ -24,7 +24,7 @@ Modern veb-ilova: har kuni o'rgangan narsalarni yozib borish, kalendar orqali ku
 ## Tez boshlash (lokalda)
 
 1. Repository ni klon qiling:
+
    ```bash
    git clone https://github.com/panjiyev-dev/distiplina-tgbot.git
-   cd studytrack
    ```
