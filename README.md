@@ -1,26 +1,30 @@
+
+### 2. Asosiy veb-ilova uchun yangilangan README.md  
+
 # StudyTrack — O'rganishni Kuzatuv va Takrorlash Tizimi
 
-**StudyTrack** — bu o'quvchilar, talabalar va o'z-o'zini o'rgatuvchilar uchun maxsus yaratilgan ilova. Har kuni o'rgangan narsalaringizni yozib borish, kalendar orqali kuzatish, statistika ko'rish va Telegram bot orqali eslatma olish imkonini beradi. Maqsad: o'rgangan narsalarni unutmaslik va motivatsiyani saqlash!
+Modern veb-ilova: har kuni o'rgangan narsalarni yozib borish, kalendar orqali kuzatish, statistika ko'rish va Telegram bot orqali eslatma olish.
 
 ## Asosiy funksiyalar
 
-- 📅 **Kalendar**: Bugun va kecha uchun yozuv qilish, o'tgan kunlarni ko'rish
-- 📊 **Statistika**: Jami yozuvlar, mukammal/chala/o'rganilmagan fanlar holati
-- 🤖 **Telegram Bot integratsiyasi**: Har 3 kunda eslatma yuborish (tasdiqlamaguningizcha qaytariladi)
-- 👤 **Profil va autentifikatsiya**: Email/parol + Google orqali kirish
-- 🌙 **Dark/Light mode** va responsiv dizayn (mobil + desktop)
-- 💾 **Firebase backend**: Real-time ma'lumotlar saqlash
+- 📅 Kalendar (bugun va kecha uchun yozuv)
+- 📊 Statistika va progress kuzatish
+- 🤖 Telegram bot integratsiyasi (eslatmalar)
+- 👤 Email + Google orqali autentifikatsiya
+- 🌙 Dark/Light mode
+- Responsiv dizayn (mobil + desktop)
 
-## Texnologiyalar stack'i
+## Texnologiyalar
 
-- **Frontend**: HTML, CSS (custom variables + gradients), Vanilla JavaScript
-- **Build tool**: Vite
-- **Backend & Auth**: Firebase (Authentication + Firestore)
-- **Fonts**: Space Grotesk + Syne
-- **Deployment**: Vercel / Netlify / Firebase Hosting (tavsiya etiladi)
+- Frontend: HTML, CSS (custom), Vanilla JavaScript
+- Build tool: Vite
+- Backend: Firebase (Authentication + Firestore)
+- Telegram Bot: alohida Node.js loyihasi[](https://github.com/panjiyev-dev/distiplina-tgbot)
 
-## Tez boshlash (lokalda ishga tushirish)
+## Tez boshlash (lokalda)
 
-1. Repozitoriyani klon qiling:
+1. Repository ni klon qiling:
    ```bash
-   git clone https://github.com/panjiyev-dev/distiplina-front.git
+   git clone https://github.com/panjiyev-dev/distiplina-tgbot.git
+   cd studytrack
+   ```
