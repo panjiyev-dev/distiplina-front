@@ -239,12 +239,16 @@ async function sendOtp(phone) {
 }
 
 function normalizePhone(raw) {
-    let p = raw.replace(/\D/g, '');
-    if (p.startsWith('998')) p = '+' + p;
-    else if (p.length === 9) p = '+998' + p;
-    else if (p.startsWith('0')) p = '+998' + p.slice(1);
-    else p = '+998' + p;
-    return p.match(/^\+998\d{9}$/) ? p : '';
+    let p = raw.trim();
+    // Agar + bilan boshlansa — to'g'ridan-to'g'ri
+    if (p.startsWith('+')) {
+        const digits = p.replace(/\D/g, '');
+        return digits.length >= 7 && digits.length <= 15 ? '+' + digits : '';
+    }
+    // Faqat raqamlar
+    const digits = p.replace(/\D/g, '');
+    if (digits.length >= 7 && digits.length <= 15) return '+' + digits;
+    return '';
 }
 
 window.doLogout = async () => {
@@ -288,8 +292,8 @@ const MONTHS = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avg
 function pad(n) { return String(n).padStart(2, '0'); }
 function mkDs(y, m, d) { return `${y}-${pad(m)}-${pad(d)}`; }
 function addDays(ds, n) { const d = new Date(ds); d.setDate(d.getDate() + n); return d.toISOString().split('T')[0]; }
-function getTodayStr() { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
-function getYesterdayStr() { const d = new Date(); d.setDate(d.getDate()-1); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
+function getTodayStr() { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; }
+function getYesterdayStr() { const d = new Date(); d.setDate(d.getDate() - 1); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; }
 
 window.changeMonth = (dir) => {
     calMonth += dir;
@@ -301,7 +305,7 @@ window.changeMonth = (dir) => {
 async function renderCalendar() {
     const now = new Date();
     if (!calYear) { calYear = now.getFullYear(); calMonth = now.getMonth() + 1; }
-    document.getElementById('cal-month-label').textContent = `${MONTHS[calMonth-1]} ${calYear}`;
+    document.getElementById('cal-month-label').textContent = `${MONTHS[calMonth - 1]} ${calYear}`;
 
     const today = getTodayStr(), yest = getYesterdayStr();
     const uid = window._user.uid;
@@ -315,15 +319,15 @@ async function renderCalendar() {
             where('month', '==', monthKey)
         ));
         snap.forEach(d => { saved[d.id.split('_')[1]] = true; });
-    } catch (e) {}
+    } catch (e) { }
 
     const grid = document.getElementById('cal-grid');
     grid.innerHTML = '';
-    ['Du','Se','Ch','Pa','Ju','Sh','Ya'].forEach(h => {
+    ['Du', 'Se', 'Ch', 'Pa', 'Ju', 'Sh', 'Ya'].forEach(h => {
         const el = document.createElement('div'); el.className = 'cal-day-header'; el.textContent = h; grid.appendChild(el);
     });
 
-    const firstDay = new Date(calYear, calMonth-1, 1).getDay();
+    const firstDay = new Date(calYear, calMonth - 1, 1).getDay();
     const emptyStart = firstDay === 0 ? 6 : firstDay - 1;
     const daysCount = new Date(calYear, calMonth, 0).getDate();
 
@@ -361,14 +365,14 @@ let currentDate = null;
 window.openModal = async (ds, mode) => {
     currentDate = ds;
     const [y, m, d] = ds.split('-');
-    document.getElementById('modal-date-title').textContent = `${d} ${MONTHS[parseInt(m)-1]} ${y}`;
+    document.getElementById('modal-date-title').textContent = `${d} ${MONTHS[parseInt(m) - 1]} ${y}`;
     document.getElementById('modal-date-sub').textContent = mode === 'today' ? '📝 Bugungi yozuvlar' : '✏️ Kechagi yozuvlar (tahrirlash mumkin)';
 
     let subjects = [];
     try {
         const snap = await getDoc(doc(db, 'entries', `${window._user.uid}_${ds}`));
         if (snap.exists()) subjects = snap.data().subjects || [];
-    } catch (e) {}
+    } catch (e) { }
 
     renderModalBody(subjects);
     document.getElementById('modal-overlay').classList.add('open');
@@ -402,17 +406,17 @@ function addSubjectCard(list, data) {
     <div class="inp-row">
       <div>
         <label class="inp-label">Yo'nalish / Fan nomi</label>
-        <input class="mini-inp subject-name" placeholder="Masalan: Python, Ingliz tili..." value="${esc(data.subject||'')}">
+        <input class="mini-inp subject-name" placeholder="Masalan: Python, Ingliz tili..." value="${esc(data.subject || '')}">
       </div>
       <div>
         <label class="inp-label">Bugun nimalar o'rgandim</label>
-        <textarea class="mini-inp textarea subject-notes" placeholder="Masalan: if, for, while...">${esc(data.notes||'')}</textarea>
+        <textarea class="mini-inp textarea subject-notes" placeholder="Masalan: if, for, while...">${esc(data.notes || '')}</textarea>
       </div>
     </div>`;
     list.appendChild(card);
 }
 
-function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 
 window.closeModal = () => { document.getElementById('modal-overlay').classList.remove('open'); document.body.style.overflow = ''; };
 window.closeModalOnBg = (e) => { if (e.target === document.getElementById('modal-overlay')) closeModal(); };
@@ -471,10 +475,10 @@ async function loadStats() {
     const tbody = document.getElementById('stats-table');
     tbody.innerHTML = '';
     Object.values(subjectMap).forEach(s => {
-        const last = s.entries.sort((a,b) => b.date.localeCompare(a.date))[0];
+        const last = s.entries.sort((a, b) => b.date.localeCompare(a.date))[0];
         const st = last.status;
-        const badge = st==='mastered'?'<span class="badge badge-green">✅ Mukammal</span>':st==='partial'?'<span class="badge badge-yellow">⚠️ Chala</span>':st==='not_learned'?'<span class="badge badge-red">❌ O\'rganilmadi</span>':'<span class="badge badge-purple">⏳ Jarayonda</span>';
-        tbody.innerHTML += `<tr><td><strong>${esc(s.name)}</strong></td><td style="color:var(--text2)">${last.date}</td><td>${badge}</td><td style="color:var(--text2);font-size:13px">${st==='mastered'?'—':'📅 '+addDays(last.date,3)}</td></tr>`;
+        const badge = st === 'mastered' ? '<span class="badge badge-green">✅ Mukammal</span>' : st === 'partial' ? '<span class="badge badge-yellow">⚠️ Chala</span>' : st === 'not_learned' ? '<span class="badge badge-red">❌ O\'rganilmadi</span>' : '<span class="badge badge-purple">⏳ Jarayonda</span>';
+        tbody.innerHTML += `<tr><td><strong>${esc(s.name)}</strong></td><td style="color:var(--text2)">${last.date}</td><td>${badge}</td><td style="color:var(--text2);font-size:13px">${st === 'mastered' ? '—' : '📅 ' + addDays(last.date, 3)}</td></tr>`;
     });
 
     const il = document.getElementById('incomplete-list');
@@ -484,9 +488,9 @@ async function loadStats() {
         return;
     }
     incomplete.slice(0, 20).forEach(item => {
-        const color = item.status==='not_learned'?'var(--danger)':'var(--warn)';
-        const icon = item.status==='not_learned'?'❌':'⚠️';
-        il.innerHTML += `<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:16px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><strong style="color:${color}">${icon} ${esc(item.subject)}</strong><span style="font-size:12px;color:var(--text3)">${item.date}</span></div><div style="font-size:13px;color:var(--text2);line-height:1.5">${esc(item.notes).substring(0,120)}${item.notes.length>120?'...':''}</div></div>`;
+        const color = item.status === 'not_learned' ? 'var(--danger)' : 'var(--warn)';
+        const icon = item.status === 'not_learned' ? '❌' : '⚠️';
+        il.innerHTML += `<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:16px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><strong style="color:${color}">${icon} ${esc(item.subject)}</strong><span style="font-size:12px;color:var(--text3)">${item.date}</span></div><div style="font-size:13px;color:var(--text2);line-height:1.5">${esc(item.notes).substring(0, 120)}${item.notes.length > 120 ? '...' : ''}</div></div>`;
     });
 }
 
