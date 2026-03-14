@@ -1,17 +1,12 @@
 <!DOCTYPE html>
 <html lang="uz">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" href="./image.png">
     <title>StudyTrack — O'rganish Kuzatuv</title>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Syne:wght@400;500;600;700;800&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="./style.css">
-
-    <!-- Google Analytics -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-FYDSF9BWC8"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
@@ -20,244 +15,226 @@
         gtag('config', 'G-FYDSF9BWC8');
     </script>
 </head>
-
 <body>
 
-    <!-- ===================== AUTH ===================== -->
-    <div id="auth-screen">
-        <div class="auth-card">
-            <div class="auth-logo">StudyTrack</div>
-            <div class="auth-sub">O'rganishingizni kuzating va takrorlang</div>
-            <div class="tab-row">
-                <button class="tab-btn active" onclick="switchTab('login')">Kirish</button>
-                <button class="tab-btn" onclick="switchTab('register')">Ro'yxatdan o'tish</button>
+<!-- ===================== AUTH ===================== -->
+<div id="auth-screen">
+    <div class="auth-card">
+        <div class="auth-logo">StudyTrack</div>
+        <div class="auth-sub">O'rganishingizni kuzating va takrorlang</div>
+
+        <div class="auth-err" id="auth-err"></div>
+
+        <!-- PHONE FORM -->
+        <div id="phone-form">
+            <div class="tg-hint">
+                <span class="tg-hint-icon">✈️</span>
+                <span>Avval <a href="https://t.me/panjiyevdevbot" target="_blank">@panjiyevdevbot</a> ga <code>/start</code> bosing va telefon raqamingizni yuboring.</span>
+            </div>
+            <div class="inp-group">
+                <label>Telefon raqam</label>
+                <div class="phone-input-wrap">
+                    <span class="phone-prefix">🇺🇿 +998</span>
+                    <input type="tel" id="login-phone" placeholder="90 123 45 67" maxlength="13"
+                        oninput="this.value=this.value.replace(/[^0-9 ]/g,'')"
+                        onkeydown="if(event.key==='Enter')doLoginPhone()">
+                </div>
+            </div>
+            <button class="btn-primary" id="login-phone-btn" onclick="doLoginPhone()">
+                Dasturga kirish ✈️
+            </button>
+        </div>
+
+        <!-- OTP FORM -->
+        <div id="otp-section" style="display:none">
+            <div class="otp-sent-info">
+                <div class="otp-sent-icon">✈️</div>
+                <div>
+                    <div class="otp-sent-title">Kod yuborildi!</div>
+                    <div class="otp-sent-phone" id="otp-phone-display"></div>
+                    <div class="otp-sent-desc">Telegram botdan kelgan 6 xonali kodni kiriting</div>
+                </div>
             </div>
 
-            <div class="auth-err" id="auth-err"></div>
-            <div id="login-form">
-                <div class="inp-group">
-                    <label>Email</label>
-                    <input type="email" id="login-email" placeholder="email@mail.com">
-                </div>
-                <div class="inp-group">
-                    <label>Parol</label>
-                    <input type="password" id="login-pass" placeholder="••••••••">
-                </div>
-                <button class="btn-primary" onclick="doLogin()">Kirish</button>
+            <div class="inp-group">
+                <label>Tasdiqlash kodi</label>
+                <input type="text" id="otp-code" placeholder="● ● ● ● ● ●"
+                    maxlength="6" inputmode="numeric" autocomplete="one-time-code"
+                    class="otp-input"
+                    oninput="this.value=this.value.replace(/\D/g,'');if(this.value.length===6)doVerifyOtp()"
+                    onkeydown="if(event.key==='Enter')doVerifyOtp()">
             </div>
-            <div id="reg-form" style="display:none">
-                <div class="inp-group">
-                    <label>Ism</label>
-                    <input type="text" id="reg-name" placeholder="Ismingiz">
-                </div>
-                <div class="inp-group">
-                    <label>Email</label>
-                    <input type="email" id="reg-email" placeholder="email@mail.com">
-                </div>
-                <div class="inp-group">
-                    <label>Parol</label>
-                    <input type="password" id="reg-pass" placeholder="min 6 belgi">
-                </div>
-                <button class="btn-primary" onclick="doRegister()">Ro'yxatdan o'tish</button>
+
+            <button class="btn-primary" id="otp-verify-btn" onclick="doVerifyOtp()">
+                ✅ Tasdiqlash
+            </button>
+
+            <div class="otp-footer">
+                <div class="otp-timer" id="otp-timer">Yangi kod 2:00 dan keyin</div>
+                <button class="otp-resend-btn" id="otp-resend-btn" onclick="doResendOtp()" disabled>
+                    Qayta yuborish
+                </button>
             </div>
+
+            <button class="otp-cancel-btn" onclick="cancelOtp()">← Orqaga</button>
+        </div>
+    </div>
+</div>
+
+<!-- ===================== APP ===================== -->
+<div id="app">
+
+    <!-- NAVBAR -->
+    <nav class="navbar">
+        <div class="nav-logo">StudyTrack</div>
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="showPage('calendar')">📅 Kalendar</button>
+            <button class="nav-tab" onclick="showPage('stats')">📊 Statistika</button>
+        </div>
+        <div class="nav-right">
+            <div class="nav-avatar-wrap">
+                <div class="nav-avatar-btn" id="nav-avatar-btn" onclick="toggleDropdown()">
+                    <img id="nav-avatar-img" src="" alt="" style="display:none;width:100%;height:100%;border-radius:50%;object-fit:cover;">
+                    <span id="nav-avatar-letter">?</span>
+                </div>
+                <div class="nav-dropdown" id="nav-dropdown">
+                    <div class="dd-user-row">
+                        <div class="dd-avatar" id="dd-avatar">
+                            <img id="dd-avatar-img" src="" alt="" style="display:none;width:100%;height:100%;border-radius:50%;object-fit:cover;">
+                            <span id="dd-avatar-letter">?</span>
+                        </div>
+                        <div>
+                            <div class="dd-user-name" id="dd-name">—</div>
+                            <div class="dd-user-email" id="dd-email">—</div>
+                        </div>
+                    </div>
+                    <div class="dd-theme-row" onclick="toggleTheme()">
+                        <div class="dd-theme-label">
+                            <span class="theme-icon" id="theme-icon">🌙</span>
+                            <span id="theme-label">Dark Mode</span>
+                        </div>
+                        <div class="toggle-switch" id="theme-toggle"></div>
+                    </div>
+                    <div class="dd-divider"></div>
+                    <button class="dd-logout-btn" onclick="doLogout()">
+                        <span class="logout-icon">🚪</span>
+                        <span class="logout-text">Chiqish</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- MOBILE BOTTOM NAV -->
+    <div class="bottom-nav" id="bottom-nav">
+        <div class="bottom-nav-inner">
+            <button class="bottom-tab active" id="btab-calendar" onclick="showPage('calendar')">
+                <span class="tab-icon">📅</span>
+                <span class="tab-label">Kalendar</span>
+            </button>
+            <button class="bottom-tab" id="btab-stats" onclick="showPage('stats')">
+                <span class="tab-icon">📊</span>
+                <span class="tab-label">Statistika</span>
+            </button>
+            <button class="bottom-tab" id="btab-profile" onclick="openProfile()">
+                <span class="tab-icon">
+                    <img id="mobile-avatar-img" src="" alt="" style="display:none;width:22px;height:22px;border-radius:50%;object-fit:cover;">
+                    <span id="mobile-avatar-fallback">👤</span>
+                </span>
+                <span class="tab-label">Profil</span>
+            </button>
         </div>
     </div>
 
-    <!-- ===================== APP ===================== -->
-    <div id="app">
-
-        <!-- NAVBAR -->
-        <nav class="navbar">
-            <div class="nav-logo">StudyTrack</div>
-
-            <!-- Desktop tabs (o'rtada) -->
-            <div class="nav-tabs">
-                <button class="nav-tab active" onclick="showPage('calendar')">📅 Kalendar</button>
-                <button class="nav-tab" onclick="showPage('stats')">📊 Statistika</button>
-                <button class="nav-tab" onclick="showPage('telegram')">🤖 Telegram Bot</button>
-            </div>
-
-            <!-- Desktop: avatar + dropdown -->
-            <div class="nav-right">
-                <div class="nav-avatar-wrap">
-                    <div class="nav-avatar-btn" id="nav-avatar-btn" onclick="toggleDropdown()">?</div>
-                    <div class="nav-dropdown" id="nav-dropdown">
-                        <div class="dd-user-row">
-                            <div class="dd-avatar" id="dd-avatar">?</div>
-                            <div>
-                                <div class="dd-user-name" id="dd-name">—</div>
-                                <div class="dd-user-email" id="dd-email">—</div>
-                            </div>
-                        </div>
-                        <div class="dd-theme-row" onclick="toggleTheme()">
-                            <div class="dd-theme-label">
-                                <span class="theme-icon" id="theme-icon">🌙</span>
-                                <span id="theme-label">Dark Mode</span>
-                            </div>
-                            <div class="toggle-switch" id="theme-toggle"></div>
-                        </div>
-                        <div class="dd-divider"></div>
-                        <button class="dd-logout-btn" onclick="doLogout()">
-                            <span class="logout-icon">🚪</span>
-                            <span class="logout-text">Chiqish</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </nav>
-
-        <!-- MOBILE BOTTOM NAV -->
-        <div class="bottom-nav" id="bottom-nav">
-            <div class="bottom-nav-inner">
-                <button class="bottom-tab active" id="btab-calendar" onclick="showPage('calendar')">
-                    <span class="tab-icon">📅</span>
-                    <span class="tab-label">Kalendar</span>
-                </button>
-                <button class="bottom-tab" id="btab-stats" onclick="showPage('stats')">
-                    <span class="tab-icon">📊</span>
-                    <span class="tab-label">Statistika</span>
-                </button>
-                <button class="bottom-tab" id="btab-telegram" onclick="showPage('telegram')">
-                    <span class="tab-icon">🤖</span>
-                    <span class="tab-label">Bot</span>
-                </button>
-                <button class="bottom-tab" id="btab-profile" onclick="openProfile()">
-                    <span class="tab-icon">👤</span>
-                    <span class="tab-label">Profil</span>
-                </button>
-            </div>
-        </div>
-
-        <!-- ===== CALENDAR PAGE ===== -->
-        <div class="page active" id="page-calendar">
-            <div class="cal-header">
-                <div>
-                    <div class="cal-title">O'rganish <span>Kalendari</span></div>
-                    <div class="cal-title-sub">Faqat bugun va kecha uchun yozish mumkin</div>
-                </div>
-                <div class="cal-nav">
-                    <button class="cal-nav-btn" onclick="changeMonth(-1)">‹</button>
-                    <span class="cal-month-label" id="cal-month-label"></span>
-                    <button class="cal-nav-btn" onclick="changeMonth(1)">›</button>
-                </div>
-            </div>
-            <div class="cal-grid" id="cal-grid"></div>
-        </div>
-
-        <!-- ===== STATS PAGE ===== -->
-        <div class="page" id="page-stats">
-            <div class="cal-title" style="margin-bottom:24px">
-                📊 <span
-                    style="background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent">Statistika</span>
-            </div>
-            <div class="stats-grid" id="stats-grid"></div>
-            <div class="section-title">Barcha fanlar holati</div>
-            <div class="table-wrap">
-                <table class="subject-table">
-                    <thead>
-                        <tr>
-                            <th>Fan / Yo'nalish</th>
-                            <th>So'nggi yozuv</th>
-                            <th>Holat</th>
-                            <th>Takrorlash</th>
-                        </tr>
-                    </thead>
-                    <tbody id="stats-table"></tbody>
-                </table>
-            </div>
-            <div style="margin-top:32px">
-                <div class="section-title">Chala va o'rganilmagan mavzular</div>
-                <div id="incomplete-list"
-                    style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;"></div>
-            </div>
-        </div>
-
-        <!-- ===== TELEGRAM PAGE ===== -->
-        <div class="page" id="page-telegram">
-            <div class="cal-title" style="margin-bottom:24px">
-                🤖 Telegram <span
-                    style="background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent">Bot</span>
-            </div>
-            <div class="bot-setup">
-                <h2>Telegram botni ulash</h2>
-                <p>Bot sizga har kuni ertalab soat 7:00 da eslatma yuboradi. Tasdiqlaguningizcha har 3 soatda qaytaradi
-                    (21:00 gacha).</p>
-                <div class="step-list">
-                    <div class="step-item">
-                        <div class="step-num">1</div>
-                        <div class="step-text">Telegram'da <code>@panjiyevdevbot</code> ni qidiring va /start bosing
-                        </div>
-                    </div>
-                    <div class="step-item">
-                        <div class="step-num">2</div>
-                        <div class="step-text">Bot sizga <strong>Chat ID</strong> beradi — uni quyida kiriting</div>
-                    </div>
-                    <div class="step-item">
-                        <div class="step-num">3</div>
-                        <div class="step-text">Saqlang — eslatmalar avtomatik boshlanadi!</div>
-                    </div>
-                </div>
-                <div class="inp-group">
-                    <label>Telegram Chat ID</label>
-                    <input type="text" id="tg-chat-id" class="mini-inp" placeholder="Masalan: 123456789">
-                </div>
-                <button class="btn-save" onclick="saveTgId()" style="width:100%;padding:14px">Saqlash</button>
-                <div id="tg-status" style="margin-top:16px;font-size:13px;color:var(--text2);"></div>
-            </div>
-            <div
-                style="margin-top:32px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:28px;">
-                <div class="section-title">Kelayotgan eslatmalar</div>
-                <div id="reminders-list"></div>
-            </div>
-        </div>
-
-    </div><!-- /app -->
-
-    <!-- ===== ENTRY MODAL ===== -->
-    <div class="modal-overlay" id="modal-overlay" onclick="closeModalOnBg(event)">
-        <div class="modal" id="modal">
-            <div class="modal-header">
-                <div>
-                    <div class="modal-date" id="modal-date-title">— — —</div>
-                    <div class="modal-date-sub" id="modal-date-sub"></div>
-                </div>
-                <button class="modal-close" onclick="closeModal()">✕</button>
-            </div>
-            <div id="modal-body-content"></div>
-        </div>
-    </div>
-
-    <!-- ===== MOBILE PROFILE DRAWER ===== -->
-    <div class="drawer-overlay" id="drawer-overlay" onclick="closeProfile()"></div>
-    <div class="profile-drawer" id="profile-drawer">
-        <div class="drawer-handle"></div>
-        <div class="drawer-avatar-row">
-            <div class="drawer-avatar" id="drawer-avatar">?</div>
+    <!-- CALENDAR PAGE -->
+    <div class="page active" id="page-calendar">
+        <div class="cal-header">
             <div>
-                <div class="drawer-name" id="drawer-name">—</div>
-                <div class="drawer-email" id="drawer-email">—</div>
+                <div class="cal-title">O'rganish <span>Kalendari</span></div>
+                <div class="cal-title-sub">Faqat bugun va kecha uchun yozish mumkin</div>
+            </div>
+            <div class="cal-nav">
+                <button class="cal-nav-btn" onclick="changeMonth(-1)">‹</button>
+                <span class="cal-month-label" id="cal-month-label"></span>
+                <button class="cal-nav-btn" onclick="changeMonth(1)">›</button>
             </div>
         </div>
-        <div class="drawer-divider"></div>
-        <div class="drawer-theme-row">
-            <div class="drawer-theme-label">
-                <span class="theme-icon" id="m-theme-icon">🌙</span>
-                <span id="m-theme-label">Dark Mode</span>
-            </div>
-            <div class="toggle-switch" id="m-theme-toggle" onclick="toggleTheme()"></div>
-        </div>
-        <div class="drawer-divider"></div>
-        <button class="drawer-logout-btn" onclick="doLogout()">
-            <span class="logout-icon">🚪</span>
-            <span class="logout-text">Chiqish</span>
-        </button>
+        <div class="cal-grid" id="cal-grid"></div>
     </div>
 
-    <!-- ===== TOAST ===== -->
-    <div class="toast" id="toast"></div>
+    <!-- STATS PAGE -->
+    <div class="page" id="page-stats">
+        <div class="cal-title" style="margin-bottom:24px">
+            📊 <span style="background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent">Statistika</span>
+        </div>
+        <div class="stats-grid" id="stats-grid"></div>
+        <div class="section-title">Barcha fanlar holati</div>
+        <div class="table-wrap">
+            <table class="subject-table">
+                <thead>
+                    <tr>
+                        <th>Fan / Yo'nalish</th>
+                        <th>So'nggi yozuv</th>
+                        <th>Holat</th>
+                        <th>Takrorlash</th>
+                    </tr>
+                </thead>
+                <tbody id="stats-table"></tbody>
+            </table>
+        </div>
+        <div style="margin-top:32px">
+            <div class="section-title">Chala va o'rganilmagan mavzular</div>
+            <div id="incomplete-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;"></div>
+        </div>
+    </div>
 
-    <script src="app.js" type="module"></script>
+</div>
 
+<!-- ENTRY MODAL -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModalOnBg(event)">
+    <div class="modal" id="modal">
+        <div class="modal-header">
+            <div>
+                <div class="modal-date" id="modal-date-title">— — —</div>
+                <div class="modal-date-sub" id="modal-date-sub"></div>
+            </div>
+            <button class="modal-close" onclick="closeModal()">✕</button>
+        </div>
+        <div id="modal-body-content"></div>
+    </div>
+</div>
+
+<!-- MOBILE PROFILE DRAWER -->
+<div class="drawer-overlay" id="drawer-overlay" onclick="closeProfile()"></div>
+<div class="profile-drawer" id="profile-drawer">
+    <div class="drawer-handle"></div>
+    <div class="drawer-avatar-row">
+        <div class="drawer-avatar" id="drawer-avatar">
+            <img id="drawer-avatar-img" src="" alt="" style="display:none;width:100%;height:100%;border-radius:50%;object-fit:cover;">
+            <span id="drawer-avatar-letter">?</span>
+        </div>
+        <div>
+            <div class="drawer-name" id="drawer-name">—</div>
+            <div class="drawer-email" id="drawer-email">—</div>
+        </div>
+    </div>
+    <div class="drawer-divider"></div>
+    <div class="drawer-theme-row">
+        <div class="drawer-theme-label">
+            <span class="theme-icon" id="m-theme-icon">🌙</span>
+            <span id="m-theme-label">Dark Mode</span>
+        </div>
+        <div class="toggle-switch" id="m-theme-toggle" onclick="toggleTheme()"></div>
+    </div>
+    <div class="drawer-divider"></div>
+    <button class="drawer-logout-btn" onclick="doLogout()">
+        <span class="logout-icon">🚪</span>
+        <span class="logout-text">Chiqish</span>
+    </button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="app.js" type="module"></script>
 </body>
-
 </html>

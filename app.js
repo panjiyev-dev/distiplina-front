@@ -1,24 +1,12 @@
-import { initializeApp }
-    from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
-    getAuth,
-    createUserWithEmailAndPassword,
-    signInWithEmailAndPassword,
-    signOut,
-    onAuthStateChanged,
-    updateProfile,
-    GoogleAuthProvider,
-    signInWithPopup,           // popup uchun (tavsiya etiladi)
-    signInWithRedirect,        // redirect uchun
-    getRedirectResult          // <-- BU NI QO'SHISH KERAK!
+    getAuth, signInWithCustomToken, signOut, onAuthStateChanged, updateProfile
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
     getFirestore, doc, setDoc, getDoc,
     collection, getDocs, query, where
-}
-    from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-/* ─── FIREBASE CONFIG ───────────────────────────── */
 const firebaseConfig = {
     apiKey: "AIzaSyA9rO5HkGJytgMTGrPu0rAWkUCAxqScB_0",
     authDomain: "distiplina-d5db3.firebaseapp.com",
@@ -31,6 +19,9 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 window._db = db;
+
+// Bot server URL — bot.js ishga tushgan server IP si
+const CF_BASE = 'https://dazzling-grace-production-9e1b.up.railway.app';
 
 /* ─── THEME ─────────────────────────────────────── */
 function applyThemeUI(isLight) {
@@ -46,7 +37,6 @@ function applyThemeUI(isLight) {
         if (el) el.textContent = isLight ? 'Light Mode' : 'Dark Mode';
     });
 }
-// Sahifa ochilganda saqlangan temani qo'llaymiz
 if (localStorage.getItem('theme') === 'light') {
     document.body.classList.add('light');
     applyThemeUI(true);
@@ -57,68 +47,205 @@ window.toggleTheme = () => {
     localStorage.setItem('theme', isLight ? 'light' : 'dark');
 };
 
-/* ─── AUTH STATE ────────────────────────────────── */
-// Sahifa yuklanganda redirect natijasini tekshirish (eng yuqorida, onAuthStateChanged dan oldin)
-getRedirectResult(auth)
-    .then((result) => {
-        if (result) {
-            // Muvaffaqiyat — user allaqachon onAuthStateChanged da qayta ishlanadi
-        }
-    })
-    .catch((error) => {
-        if (error.code !== 'auth/redirect-cancelled-by-user') {
-            showErr('Redirect natijasi xatosi: ' + error.message);
-        }
-    });
-
+/* ─── AUTH STATE ─────────────────────────────────── */
 onAuthStateChanged(auth, async (user) => {
     if (user) {
         window._user = user;
         document.getElementById('auth-screen').classList.add('hidden');
         document.getElementById('app').classList.add('visible');
 
-        const initials = (user.displayName || user.email).charAt(0).toUpperCase();
-        // Desktop navbar
-        document.getElementById('nav-avatar-btn').textContent = initials;
-        document.getElementById('dd-avatar').textContent = initials;
-        document.getElementById('dd-name').textContent = user.displayName || 'Foydalanuvchi';
-        document.getElementById('dd-email').textContent = user.email;
-        // Mobile drawer
-        document.getElementById('drawer-avatar').textContent = initials;
-        document.getElementById('drawer-name').textContent = user.displayName || 'Foydalanuvchi';
-        document.getElementById('drawer-email').textContent = user.email;
+        // User ma'lumotlarini Firestore dan olish (tg avatar, ism)
+        try {
+            const userSnap = await getDoc(doc(db, 'users', user.uid));
+            if (userSnap.exists()) {
+                const userData = userSnap.data();
+                const name = userData.name || user.displayName || 'Foydalanuvchi';
+                const phone = userData.phone || '';
+                const photoUrl = userData.tgPhotoUrl || '';
+
+                setAvatars(name, photoUrl);
+                document.getElementById('dd-name').textContent = name;
+                document.getElementById('dd-email').textContent = phone;
+                document.getElementById('drawer-name').textContent = name;
+                document.getElementById('drawer-email').textContent = phone;
+            } else {
+                const name = user.displayName || 'Foydalanuvchi';
+                setAvatars(name, '');
+                document.getElementById('dd-name').textContent = name;
+                document.getElementById('dd-email').textContent = '';
+                document.getElementById('drawer-name').textContent = name;
+                document.getElementById('drawer-email').textContent = '';
+            }
+        } catch (e) {
+            const name = user.displayName || 'U';
+            setAvatars(name, '');
+        }
 
         await renderCalendar();
         loadStats();
-        loadReminders();
-        loadTgId();
     } else {
         window._user = null;
         document.getElementById('auth-screen').classList.remove('hidden');
         document.getElementById('app').classList.remove('visible');
+        showOtpForm(false);
+        hideErr();
     }
 });
 
-/* ─── AUTH FUNCTIONS ────────────────────────────── */
-window.doLogin = async () => {
-    const email = document.getElementById('login-email').value.trim();
-    const pass = document.getElementById('login-pass').value;
+// Avatar o'rnatish — rasm bo'lsa rasm, bo'lmasa harf
+function setAvatars(name, photoUrl) {
+    const letter = (name || 'U').charAt(0).toUpperCase();
+    const ids = [
+        { img: 'nav-avatar-img', letter: 'nav-avatar-letter' },
+        { img: 'dd-avatar-img', letter: 'dd-avatar-letter' },
+        { img: 'drawer-avatar-img', letter: 'drawer-avatar-letter' },
+    ];
+    ids.forEach(({ img, letter: letterId }) => {
+        const imgEl = document.getElementById(img);
+        const letterEl = document.getElementById(letterId);
+        if (photoUrl && imgEl) {
+            imgEl.src = photoUrl;
+            imgEl.style.display = 'block';
+            if (letterEl) letterEl.style.display = 'none';
+        } else {
+            if (imgEl) imgEl.style.display = 'none';
+            if (letterEl) { letterEl.style.display = 'inline'; letterEl.textContent = letter; }
+        }
+    });
+
+    // Mobile bottom tab avatar
+    const mobileImg = document.getElementById('mobile-avatar-img');
+    const mobileFallback = document.getElementById('mobile-avatar-fallback');
+    if (photoUrl && mobileImg) {
+        mobileImg.src = photoUrl;
+        mobileImg.style.display = 'inline-block';
+        if (mobileFallback) mobileFallback.style.display = 'none';
+    } else {
+        if (mobileImg) mobileImg.style.display = 'none';
+        if (mobileFallback) mobileFallback.style.display = 'inline';
+    }
+}
+
+/* ─── OTP TIMER ──────────────────────────────────── */
+let otpTimerInterval = null;
+let otpSeconds = 120;
+let pendingPhone = '';
+
+function startOtpTimer() {
+    otpSeconds = 120;
+    clearOtpTimer();
+    updateTimerDisplay();
+    otpTimerInterval = setInterval(() => {
+        otpSeconds--;
+        updateTimerDisplay();
+        if (otpSeconds <= 0) {
+            clearOtpTimer();
+            document.getElementById('otp-resend-btn').disabled = false;
+            document.getElementById('otp-timer').textContent = 'Kod muddati tugadi';
+        }
+    }, 1000);
+}
+function clearOtpTimer() {
+    if (otpTimerInterval) { clearInterval(otpTimerInterval); otpTimerInterval = null; }
+}
+function updateTimerDisplay() {
+    const m = Math.floor(otpSeconds / 60);
+    const s = otpSeconds % 60;
+    document.getElementById('otp-timer').textContent = `Yangi kod ${m}:${String(s).padStart(2, '0')} dan keyin`;
+    document.getElementById('otp-resend-btn').disabled = otpSeconds > 0;
+}
+
+function showOtpForm(show, phone = '') {
+    document.getElementById('otp-section').style.display = show ? 'block' : 'none';
+    document.getElementById('phone-form').style.display = show ? 'none' : 'block';
+    if (show) {
+        document.getElementById('otp-phone-display').textContent = phone;
+        document.getElementById('otp-code').value = '';
+        startOtpTimer();
+        setTimeout(() => document.getElementById('otp-code').focus(), 100);
+    } else {
+        clearOtpTimer();
+    }
+}
+
+/* ─── AUTH FUNCTIONS ─────────────────────────────── */
+window.doLoginPhone = async () => {
+    const raw = document.getElementById('login-phone').value.trim();
+    const phone = normalizePhone(raw);
+    if (!phone) { showErr('Telefon raqamni to\'g\'ri kiriting'); return; }
     hideErr();
-    try { await signInWithEmailAndPassword(auth, email, pass); }
-    catch (e) { showErr(friendlyError(e.code)); }
+    setBtnLoading('login-phone-btn', true);
+    try {
+        await sendOtp(phone);
+        pendingPhone = phone;
+        showOtpForm(true, phone);
+    } catch (e) {
+        showErr(friendlyError(e.message));
+    } finally {
+        setBtnLoading('login-phone-btn', false);
+    }
 };
 
-window.doRegister = async () => {
-    const name = document.getElementById('reg-name').value.trim();
-    const email = document.getElementById('reg-email').value.trim();
-    const pass = document.getElementById('reg-pass').value;
+window.doVerifyOtp = async () => {
+    const code = document.getElementById('otp-code').value.trim();
+    if (code.length !== 6) { showErr('6 xonali kodni kiriting'); return; }
     hideErr();
-    if (!name) { showErr('Ism kiriting'); return; }
+    setBtnLoading('otp-verify-btn', true);
     try {
-        const cred = await createUserWithEmailAndPassword(auth, email, pass);
-        await updateProfile(cred.user, { displayName: name });
-    } catch (e) { showErr(friendlyError(e.code)); }
+        const res = await fetch(`${CF_BASE}/verifyOtp`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phone: pendingPhone, code })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || data.message || 'Xatolik');
+        await signInWithCustomToken(auth, data.token);
+        clearOtpTimer();
+    } catch (e) {
+        showErr(friendlyError(e.message));
+    } finally {
+        setBtnLoading('otp-verify-btn', false);
+    }
 };
+
+window.doResendOtp = async () => {
+    hideErr();
+    document.getElementById('otp-resend-btn').disabled = true;
+    try {
+        await sendOtp(pendingPhone);
+        startOtpTimer();
+        showToast('✅ Yangi kod yuborildi!', 'success');
+    } catch (e) {
+        showErr(friendlyError(e.message));
+        document.getElementById('otp-resend-btn').disabled = false;
+    }
+};
+
+window.cancelOtp = () => {
+    showOtpForm(false);
+    pendingPhone = '';
+    hideErr();
+};
+
+async function sendOtp(phone) {
+    const res = await fetch(`${CF_BASE}/sendOtp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || data.message || 'Kod yuborishda xatolik');
+    return data;
+}
+
+function normalizePhone(raw) {
+    let p = raw.replace(/\D/g, '');
+    if (p.startsWith('998')) p = '+' + p;
+    else if (p.length === 9) p = '+998' + p;
+    else if (p.startsWith('0')) p = '+998' + p.slice(1);
+    else p = '+998' + p;
+    return p.match(/^\+998\d{9}$/) ? p : '';
+}
 
 window.doLogout = async () => {
     closeProfile();
@@ -126,33 +253,43 @@ window.doLogout = async () => {
     await signOut(auth);
 };
 
-function friendlyError(code) {
-    return ({
-        'auth/email-already-in-use': "Bu email allaqachon ro'yxatdan o'tgan",
-        'auth/weak-password': "Parol kamida 6 belgi bo'lsin",
-        'auth/user-not-found': 'Bu email topilmadi',
-        'auth/wrong-password': "Noto'g'ri parol",
-        'auth/invalid-email': "Email noto'g'ri formatda",
-        'auth/invalid-credential': "Email yoki parol noto'g'ri",
-    })[code] || 'Xatolik: ' + code;
+function friendlyError(msg) {
+    const map = {
+        'no-chat-id': 'Bu raqam Telegram bot bilan bog\'lanmagan.\n@panjiyevdevbot ga /start bosing',
+        'user-not-found': 'Bu telefon raqami topilmadi',
+        'invalid-code': 'Noto\'g\'ri kod',
+        'code-expired': 'Kod muddati o\'tdi. Yangi kod oling',
+        'too-many-requests': 'Iltimos, 1 daqiqa kuting',
+    };
+    for (const [k, v] of Object.entries(map)) {
+        if (msg.includes(k)) return v;
+    }
+    return msg || 'Noma\'lum xatolik';
 }
-function showErr(msg) { const e = document.getElementById('auth-err'); e.textContent = msg; e.style.display = 'block'; }
+
+function showErr(msg) {
+    const e = document.getElementById('auth-err');
+    e.textContent = msg; e.style.display = 'block';
+}
 function hideErr() { document.getElementById('auth-err').style.display = 'none'; }
 
-/* ─── CALENDAR ──────────────────────────────────── */
+function setBtnLoading(id, loading) {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    btn.disabled = loading;
+    btn.dataset.orig = btn.dataset.orig || btn.textContent;
+    btn.textContent = loading ? 'Yuklanmoqda...' : btn.dataset.orig;
+}
+
+/* ─── CALENDAR ───────────────────────────────────── */
 let calYear, calMonth;
 const MONTHS = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr'];
 
 function pad(n) { return String(n).padStart(2, '0'); }
 function mkDs(y, m, d) { return `${y}-${pad(m)}-${pad(d)}`; }
 function addDays(ds, n) { const d = new Date(ds); d.setDate(d.getDate() + n); return d.toISOString().split('T')[0]; }
-function getTodayStr() {
-    const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-}
-function getYesterdayStr() {
-    const d = new Date(); d.setDate(d.getDate() - 1);
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-}
+function getTodayStr() { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
+function getYesterdayStr() { const d = new Date(); d.setDate(d.getDate()-1); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
 
 window.changeMonth = (dir) => {
     calMonth += dir;
@@ -164,11 +301,9 @@ window.changeMonth = (dir) => {
 async function renderCalendar() {
     const now = new Date();
     if (!calYear) { calYear = now.getFullYear(); calMonth = now.getMonth() + 1; }
+    document.getElementById('cal-month-label').textContent = `${MONTHS[calMonth-1]} ${calYear}`;
 
-    document.getElementById('cal-month-label').textContent = `${MONTHS[calMonth - 1]} ${calYear}`;
-
-    const today = getTodayStr();
-    const yest = getYesterdayStr();
+    const today = getTodayStr(), yest = getYesterdayStr();
     const uid = window._user.uid;
     const monthKey = `${calYear}-${pad(calMonth)}`;
     const saved = {};
@@ -180,28 +315,24 @@ async function renderCalendar() {
             where('month', '==', monthKey)
         ));
         snap.forEach(d => { saved[d.id.split('_')[1]] = true; });
-    } catch (e) { }
+    } catch (e) {}
 
     const grid = document.getElementById('cal-grid');
     grid.innerHTML = '';
-
-    ['Du', 'Se', 'Ch', 'Pa', 'Ju', 'Sh', 'Ya'].forEach(h => {
+    ['Du','Se','Ch','Pa','Ju','Sh','Ya'].forEach(h => {
         const el = document.createElement('div'); el.className = 'cal-day-header'; el.textContent = h; grid.appendChild(el);
     });
 
-    const firstDay = new Date(calYear, calMonth - 1, 1).getDay();
+    const firstDay = new Date(calYear, calMonth-1, 1).getDay();
     const emptyStart = firstDay === 0 ? 6 : firstDay - 1;
     const daysCount = new Date(calYear, calMonth, 0).getDate();
 
     for (let i = 0; i < emptyStart; i++) {
         const e = document.createElement('div'); e.className = 'cal-cell empty'; grid.appendChild(e);
     }
-
     for (let d = 1; d <= daysCount; d++) {
         const ds = mkDs(calYear, calMonth, d);
-        const cell = document.createElement('div');
-        cell.className = 'cal-cell';
-
+        const cell = document.createElement('div'); cell.className = 'cal-cell';
         const numEl = document.createElement('div'); numEl.className = 'day-num'; numEl.textContent = d;
         cell.appendChild(numEl);
 
@@ -216,7 +347,6 @@ async function renderCalendar() {
         } else {
             cell.classList.add('future');
         }
-
         if (saved[ds]) {
             cell.classList.add('has-data');
             const dot = document.createElement('div'); dot.className = 'dot'; cell.appendChild(dot);
@@ -225,21 +355,20 @@ async function renderCalendar() {
     }
 }
 
-/* ─── MODAL ─────────────────────────────────────── */
-let currentDate = null, currentMode = null;
+/* ─── MODAL ──────────────────────────────────────── */
+let currentDate = null;
 
 window.openModal = async (ds, mode) => {
-    currentDate = ds; currentMode = mode;
+    currentDate = ds;
     const [y, m, d] = ds.split('-');
-    document.getElementById('modal-date-title').textContent = `${d} ${MONTHS[parseInt(m) - 1]} ${y}`;
-    document.getElementById('modal-date-sub').textContent =
-        mode === 'today' ? '📝 Bugungi yozuvlar' : '✏️ Kechagi yozuvlar (tahrirlash mumkin)';
+    document.getElementById('modal-date-title').textContent = `${d} ${MONTHS[parseInt(m)-1]} ${y}`;
+    document.getElementById('modal-date-sub').textContent = mode === 'today' ? '📝 Bugungi yozuvlar' : '✏️ Kechagi yozuvlar (tahrirlash mumkin)';
 
     let subjects = [];
     try {
         const snap = await getDoc(doc(db, 'entries', `${window._user.uid}_${ds}`));
         if (snap.exists()) subjects = snap.data().subjects || [];
-    } catch (e) { }
+    } catch (e) {}
 
     renderModalBody(subjects);
     document.getElementById('modal-overlay').classList.add('open');
@@ -249,21 +378,16 @@ window.openModal = async (ds, mode) => {
 function renderModalBody(subjects) {
     const body = document.getElementById('modal-body-content');
     body.innerHTML = '';
-
     const list = document.createElement('div'); list.className = 'subjects-list'; list.id = 'subjects-list';
     subjects.forEach(s => addSubjectCard(list, s));
     body.appendChild(list);
-
     const addBtn = document.createElement('button');
     addBtn.className = 'add-subject-btn';
     addBtn.innerHTML = "+ Yangi fan / yo'nalish qo'shish";
     addBtn.onclick = () => addSubjectCard(document.getElementById('subjects-list'), { subject: '', notes: '' });
     body.appendChild(addBtn);
-
     const footer = document.createElement('div'); footer.className = 'modal-footer';
-    footer.innerHTML = `
-    <button class="btn-secondary" onclick="closeModal()">Bekor qilish</button>
-    <button class="btn-save" onclick="saveEntry()">💾 Saqlash</button>`;
+    footer.innerHTML = `<button class="btn-secondary" onclick="closeModal()">Bekor qilish</button><button class="btn-save" onclick="saveEntry()">💾 Saqlash</button>`;
     body.appendChild(footer);
 }
 
@@ -278,27 +402,20 @@ function addSubjectCard(list, data) {
     <div class="inp-row">
       <div>
         <label class="inp-label">Yo'nalish / Fan nomi</label>
-        <input class="mini-inp subject-name" placeholder="Masalan: Python, Ingliz tili..." value="${esc(data.subject || '')}">
+        <input class="mini-inp subject-name" placeholder="Masalan: Python, Ingliz tili..." value="${esc(data.subject||'')}">
       </div>
       <div>
         <label class="inp-label">Bugun nimalar o'rgandim</label>
-        <textarea class="mini-inp textarea subject-notes" placeholder="Masalan: if, for, while...">${esc(data.notes || '')}</textarea>
+        <textarea class="mini-inp textarea subject-notes" placeholder="Masalan: if, for, while...">${esc(data.notes||'')}</textarea>
       </div>
     </div>`;
     list.appendChild(card);
 }
 
-function esc(s) {
-    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
-window.closeModal = () => {
-    document.getElementById('modal-overlay').classList.remove('open');
-    document.body.style.overflow = '';
-};
-window.closeModalOnBg = (e) => {
-    if (e.target === document.getElementById('modal-overlay')) closeModal();
-};
+window.closeModal = () => { document.getElementById('modal-overlay').classList.remove('open'); document.body.style.overflow = ''; };
+window.closeModalOnBg = (e) => { if (e.target === document.getElementById('modal-overlay')) closeModal(); };
 
 window.saveEntry = async () => {
     const cards = document.querySelectorAll('#subjects-list .subject-card');
@@ -309,14 +426,11 @@ window.saveEntry = async () => {
         if (name) subjects.push({ subject: name, notes });
     });
     if (!subjects.length) { showToast('Kamida 1 ta fan kiriting!', 'error'); return; }
-
     const uid = window._user.uid;
     const [y, m] = currentDate.split('-');
     try {
         await setDoc(doc(db, 'entries', `${uid}_${currentDate}`), {
-            uid, date: currentDate,
-            month: `${y}-${m}`,
-            subjects,
+            uid, date: currentDate, month: `${y}-${m}`, subjects,
             updatedAt: new Date().toISOString(),
             reminderDate: addDays(currentDate, 3),
             reminderStatus: 'pending'
@@ -328,7 +442,7 @@ window.saveEntry = async () => {
     } catch (e) { showToast('Xatolik: ' + e.message, 'error'); }
 };
 
-/* ─── STATS ─────────────────────────────────────── */
+/* ─── STATS ──────────────────────────────────────── */
 async function loadStats() {
     if (!window._user) return;
     const snap = await getDocs(query(collection(db, 'entries'), where('uid', '==', window._user.uid)));
@@ -357,19 +471,10 @@ async function loadStats() {
     const tbody = document.getElementById('stats-table');
     tbody.innerHTML = '';
     Object.values(subjectMap).forEach(s => {
-        const last = s.entries.sort((a, b) => b.date.localeCompare(a.date))[0];
+        const last = s.entries.sort((a,b) => b.date.localeCompare(a.date))[0];
         const st = last.status;
-        const badge =
-            st === 'mastered' ? '<span class="badge badge-green">✅ Mukammal</span>' :
-                st === 'partial' ? '<span class="badge badge-yellow">⚠️ Chala</span>' :
-                    st === 'not_learned' ? '<span class="badge badge-red">❌ O\'rganilmadi</span>' :
-                        '<span class="badge badge-purple">⏳ Jarayonda</span>';
-        tbody.innerHTML += `<tr>
-      <td><strong>${esc(s.name)}</strong></td>
-      <td style="color:var(--text2)">${last.date}</td>
-      <td>${badge}</td>
-      <td style="color:var(--text2);font-size:13px">${st === 'mastered' ? '—' : '📅 ' + addDays(last.date, 3)}</td>
-    </tr>`;
+        const badge = st==='mastered'?'<span class="badge badge-green">✅ Mukammal</span>':st==='partial'?'<span class="badge badge-yellow">⚠️ Chala</span>':st==='not_learned'?'<span class="badge badge-red">❌ O\'rganilmadi</span>':'<span class="badge badge-purple">⏳ Jarayonda</span>';
+        tbody.innerHTML += `<tr><td><strong>${esc(s.name)}</strong></td><td style="color:var(--text2)">${last.date}</td><td>${badge}</td><td style="color:var(--text2);font-size:13px">${st==='mastered'?'—':'📅 '+addDays(last.date,3)}</td></tr>`;
     });
 
     const il = document.getElementById('incomplete-list');
@@ -379,106 +484,29 @@ async function loadStats() {
         return;
     }
     incomplete.slice(0, 20).forEach(item => {
-        const color = item.status === 'not_learned' ? 'var(--danger)' : 'var(--warn)';
-        const icon = item.status === 'not_learned' ? '❌' : '⚠️';
-        il.innerHTML += `
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:16px">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-          <strong style="color:${color}">${icon} ${esc(item.subject)}</strong>
-          <span style="font-size:12px;color:var(--text3)">${item.date}</span>
-        </div>
-        <div style="font-size:13px;color:var(--text2);line-height:1.5">${esc(item.notes).substring(0, 120)}${item.notes.length > 120 ? '...' : ''}</div>
-      </div>`;
+        const color = item.status==='not_learned'?'var(--danger)':'var(--warn)';
+        const icon = item.status==='not_learned'?'❌':'⚠️';
+        il.innerHTML += `<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:16px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><strong style="color:${color}">${icon} ${esc(item.subject)}</strong><span style="font-size:12px;color:var(--text3)">${item.date}</span></div><div style="font-size:13px;color:var(--text2);line-height:1.5">${esc(item.notes).substring(0,120)}${item.notes.length>120?'...':''}</div></div>`;
     });
 }
 
-/* ─── TELEGRAM ──────────────────────────────────── */
-async function loadTgId() {
-    if (!window._user) return;
-    try {
-        const snap = await getDoc(doc(db, 'users', window._user.uid));
-        if (snap.exists() && snap.data().tgChatId)
-            document.getElementById('tg-chat-id').value = snap.data().tgChatId;
-    } catch (e) { }
-}
-
-window.saveTgId = async () => {
-    const chatId = document.getElementById('tg-chat-id').value.trim();
-    if (!chatId) { showToast('Chat ID kiriting!', 'error'); return; }
-    try {
-        await setDoc(doc(db, 'users', window._user.uid), {
-            tgChatId: chatId, name: window._user.displayName || '',
-            email: window._user.email, updatedAt: new Date().toISOString()
-        }, { merge: true });
-        document.getElementById('tg-status').innerHTML = '✅ <span style="color:var(--success)">Saqlandi!</span>';
-        showToast('✅ Telegram ID saqlandi!', 'success');
-    } catch (e) { showToast('Xatolik: ' + e.message, 'error'); }
-};
-
-async function loadReminders() {
-    if (!window._user) return;
-    const today = getTodayStr(); const upcoming = [];
-    try {
-        const snap = await getDocs(query(
-            collection(db, 'entries'),
-            where('uid', '==', window._user.uid),
-            where('reminderStatus', '==', 'pending')
-        ));
-        snap.forEach(d => {
-            const data = d.data();
-            if (data.reminderDate >= today)
-                upcoming.push({ reminderDate: data.reminderDate, date: data.date, subjects: data.subjects || [] });
-        });
-    } catch (e) { }
-
-    const el = document.getElementById('reminders-list');
-    if (!upcoming.length) {
-        el.innerHTML = "<div style=\"color:var(--text2);font-size:14px\">Hozircha kelayotgan eslatma yo'q</div>";
-        return;
-    }
-    upcoming.sort((a, b) => a.reminderDate.localeCompare(b.reminderDate));
-    el.innerHTML = upcoming.slice(0, 10).map(r => `
-    <div style="display:flex;align-items:center;gap:16px;padding:14px 0;border-bottom:1px solid var(--border)">
-      <div style="background:rgba(108,99,255,.15);color:var(--accent);border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;white-space:nowrap">📅 ${r.reminderDate}</div>
-      <div>
-        <div style="font-size:14px;font-weight:600;margin-bottom:2px">${r.subjects.map(s => s.subject).join(', ')}</div>
-        <div style="font-size:12px;color:var(--text2)">${r.date} sanasidagi yozuv uchun</div>
-      </div>
-    </div>`).join('');
-}
-
-/* ─── UI HELPERS ────────────────────────────────── */
-window.switchTab = (tab) => {
-    document.getElementById('login-form').style.display = tab === 'login' ? 'block' : 'none';
-    document.getElementById('reg-form').style.display = tab === 'register' ? 'block' : 'none';
-    document.querySelectorAll('.tab-btn').forEach((b, i) =>
-        b.classList.toggle('active', (i === 0 && tab === 'login') || (i === 1 && tab === 'register'))
-    );
-    hideErr();
-};
-
+/* ─── UI HELPERS ─────────────────────────────────── */
 window.showPage = (page) => {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.bottom-tab').forEach(t => t.classList.remove('active'));
     document.getElementById(`page-${page}`).classList.add('active');
-    const idx = { calendar: 0, stats: 1, telegram: 2 }[page];
+    const idx = { calendar: 0, stats: 1 }[page];
     document.querySelectorAll('.nav-tab')[idx]?.classList.add('active');
     document.getElementById(`btab-${page}`)?.classList.add('active');
     if (page === 'stats') loadStats();
-    if (page === 'telegram') { loadReminders(); loadTgId(); }
 };
 
-/* Desktop dropdown */
-window.toggleDropdown = () => {
-    document.getElementById('nav-dropdown').classList.toggle('open');
-};
+window.toggleDropdown = () => { document.getElementById('nav-dropdown').classList.toggle('open'); };
 document.addEventListener('click', e => {
-    if (!e.target.closest('.nav-avatar-wrap'))
-        document.getElementById('nav-dropdown').classList.remove('open');
+    if (!e.target.closest('.nav-avatar-wrap')) document.getElementById('nav-dropdown').classList.remove('open');
 });
 
-/* Mobile drawer */
 window.openProfile = () => {
     document.getElementById('drawer-overlay').classList.add('open');
     document.getElementById('profile-drawer').classList.add('open');
@@ -490,7 +518,6 @@ window.closeProfile = () => {
     document.body.style.overflow = '';
 };
 
-/* Mobile → Desktop o'tganda overflow reset */
 window.addEventListener('resize', () => {
     if (window.innerWidth >= 641) {
         document.body.style.overflow = '';
@@ -498,7 +525,6 @@ window.addEventListener('resize', () => {
     }
 });
 
-/* Toast */
 function showToast(msg, type = 'success') {
     const t = document.getElementById('toast');
     t.textContent = msg; t.className = `toast ${type} show`;
