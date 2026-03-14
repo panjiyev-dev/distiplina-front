@@ -1,0 +1,8 @@
+[build]
+  publish = "front"
+  command = "echo 'Building...'"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

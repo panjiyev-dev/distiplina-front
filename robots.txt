@@ -1,0 +1,1 @@
+User-agent: * Allow: / Disallow: /private/ Sitemap: https://study-track.uz/sitemap.xml
